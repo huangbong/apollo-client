@@ -63,6 +63,14 @@ import {
   FragmentMatcherInterface,
 } from './data/fragmentMatcher';
 
+import { Api, JsonAPI } from './transport/api';
+import {
+  HttpTransport,
+  FilterInterface,
+  BasicTransport,
+  JsonTransport,
+} from './transport/http/index';
+
 export {
   createNetworkInterface,
   createBatchingNetworkInterface,
@@ -105,6 +113,12 @@ export {
   UpdateQueryOptions,
   FetchMoreQueryOptions,
   SubscribeToMoreOptions,
+  BasicTransport,
+  JsonTransport,
+  Api,
+  JsonAPI,
+  FilterInterface,
+  HttpTransport,
 };
 
 export default ApolloClient;

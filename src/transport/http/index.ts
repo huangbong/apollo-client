@@ -1,3 +1,5 @@
+import { BasicTransport } from './basic';
+import { JsonTransport } from './json';
 export interface FilterInterface {
   (this: HttpTransport, request: Request, next: Function): Promise<Response>;
 }
@@ -12,3 +14,4 @@ export interface HttpTransport {
     entity: any,
   ): Promise<Response>;
 }
+export { BasicTransport, JsonTransport };
