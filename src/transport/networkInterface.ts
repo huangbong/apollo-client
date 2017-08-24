@@ -270,7 +270,7 @@ export class HTTPFetchNetworkInterface extends BaseNetworkInterface {
 }
 
 export interface NetworkInterfaceOptions {
-  api?: string | Api;
+  uri?: string | Api;
   opts?: RequestInit;
 }
 
@@ -296,7 +296,7 @@ as of Apollo Client 0.5. Please pass it as the "uri" property of the network int
     api = uriOrInterfaceOpts;
   } else {
     opts = uriOrInterfaceOpts.opts;
-    api = uriOrInterfaceOpts.api;
+    api = uriOrInterfaceOpts.uri;
   }
   return new HTTPFetchNetworkInterface(api, opts);
 }

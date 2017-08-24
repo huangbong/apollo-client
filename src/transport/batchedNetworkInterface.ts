@@ -39,17 +39,17 @@ export class HTTPBatchedNetworkInterface extends BaseNetworkInterface {
   private batcher: QueryBatcher;
 
   constructor({
-    api,
+    uri,
     batchInterval = 10,
     batchMax = 0,
     fetchOpts,
   }: {
-    api: string | Api;
+    uri: string | Api | undefined;
     batchInterval?: number;
     batchMax?: number;
     fetchOpts: RequestInit;
   }) {
-    super(api, fetchOpts);
+    super(uri, fetchOpts);
 
     if (typeof batchInterval !== 'number') {
       throw new Error(`batchInterval must be a number, got ${batchInterval}`);
@@ -241,7 +241,7 @@ export class HTTPBatchedNetworkInterface extends BaseNetworkInterface {
 }
 
 export interface BatchingNetworkInterfaceOptions {
-  api: string | Api;
+  uri: string | Api;
   batchInterval?: number;
   batchMax?: number;
   opts?: RequestInit;
@@ -256,7 +256,7 @@ export function createBatchingNetworkInterface(
     );
   }
   return new HTTPBatchedNetworkInterface({
-    api: options.api,
+    uri: options.uri,
     batchInterval: options.batchInterval,
     batchMax: options.batchMax,
     fetchOpts: options.opts || {},
