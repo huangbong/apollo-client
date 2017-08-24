@@ -1,5 +1,3 @@
-import 'whatwg-fetch';
-
 import { ExecutionResult, DocumentNode } from 'graphql';
 
 import { print } from 'graphql/language/printer';
@@ -11,6 +9,8 @@ import { AfterwareInterface, BatchAfterwareInterface } from './afterware';
 import { removeConnectionDirectiveFromDocument } from '../queries/queryTransform';
 
 import { Observable } from '../util/Observable';
+import { Api, JsonAPI } from './api';
+import { JsonTransport } from './http/json';
 
 /**
  * This is an interface that describes an GraphQL document to be sent
@@ -98,25 +98,30 @@ export function printRequest(request: Request): PrintedRequest {
 export class BaseNetworkInterface implements NetworkInterface {
   public _middlewares: MiddlewareInterface[] | BatchMiddlewareInterface[];
   public _afterwares: AfterwareInterface[] | BatchAfterwareInterface[];
-  public _uri: string;
   public _opts: RequestInit;
-
-  constructor(uri: string | undefined, opts: RequestInit = {}) {
-    if (!uri) {
+  public _api: Api;
+  public _uri: string;
+  constructor(api: string | Api | undefined, opts: RequestInit = {}) {
+    if (!api) {
       throw new Error('A remote endpoint is required for a network layer');
     }
 
-    if (typeof uri !== 'string') {
-      throw new Error('Remote endpoint must be a string');
+    if (typeof api === 'string') {
+      api = new JsonAPI(api, new JsonTransport(null, opts));
     }
+    this._uri = api.uri;
 
-    this._uri = uri;
+    this._api = api;
     this._opts = { ...opts };
 
     this._middlewares = [];
     this._afterwares = [];
   }
 
+  public withApi(api: Api): NetworkInterface {
+    this._api = api;
+    return this;
+  }
   public query(request: Request): Promise<ExecutionResult> {
     return new Promise((resolve, reject) => {
       reject(new Error('BaseNetworkInterface should not be used directly'));
@@ -184,17 +189,7 @@ export class HTTPFetchNetworkInterface extends BaseNetworkInterface {
     request,
     options,
   }: RequestAndOptions): Promise<Response> {
-    return fetch(this._uri, {
-      ...this._opts,
-      body: JSON.stringify(printRequest(request)),
-      method: 'POST',
-      ...options,
-      headers: {
-        Accept: '*/*',
-        'Content-Type': 'application/json',
-        ...options.headers as { [headerName: string]: string },
-      },
-    });
+    return this._api.query(printRequest(request), options);
   }
 
   public query(request: Request): Promise<ExecutionResult> {
@@ -275,7 +270,7 @@ export class HTTPFetchNetworkInterface extends BaseNetworkInterface {
 }
 
 export interface NetworkInterfaceOptions {
-  uri?: string;
+  api?: string | Api;
   opts?: RequestInit;
 }
 
@@ -289,7 +284,7 @@ export function createNetworkInterface(
     );
   }
 
-  let uri: string | undefined;
+  let api: string | Api | undefined;
   let opts: RequestInit | undefined;
 
   // We want to change the API in the future so that you just pass all of the options as one
@@ -298,10 +293,10 @@ export function createNetworkInterface(
     console.warn(`Passing the URI as the first argument to createNetworkInterface is deprecated \
 as of Apollo Client 0.5. Please pass it as the "uri" property of the network interface options.`);
     opts = secondArgOpts.opts;
-    uri = uriOrInterfaceOpts;
+    api = uriOrInterfaceOpts;
   } else {
     opts = uriOrInterfaceOpts.opts;
-    uri = uriOrInterfaceOpts.uri;
+    api = uriOrInterfaceOpts.api;
   }
-  return new HTTPFetchNetworkInterface(uri, opts);
+  return new HTTPFetchNetworkInterface(api, opts);
 }

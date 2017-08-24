@@ -5,7 +5,6 @@ import 'whatwg-fetch';
 import {
   BaseNetworkInterface,
   HTTPNetworkInterface,
-  RequestAndOptions,
   Request,
   printRequest,
 } from './networkInterface';
@@ -18,6 +17,7 @@ import { BatchMiddlewareInterface } from './middleware';
 import { QueryBatcher } from './batching';
 
 import { assign } from '../util/assign';
+import { Api } from './api';
 
 export interface BatchRequestAndOptions {
   requests: Request[];
@@ -39,17 +39,17 @@ export class HTTPBatchedNetworkInterface extends BaseNetworkInterface {
   private batcher: QueryBatcher;
 
   constructor({
-    uri,
+    api,
     batchInterval = 10,
     batchMax = 0,
     fetchOpts,
   }: {
-    uri: string;
+    api: string | Api;
     batchInterval?: number;
     batchMax?: number;
     fetchOpts: RequestInit;
   }) {
-    super(uri, fetchOpts);
+    super(api, fetchOpts);
 
     if (typeof batchInterval !== 'number') {
       throw new Error(`batchInterval must be a number, got ${batchInterval}`);
@@ -236,22 +236,12 @@ export class HTTPBatchedNetworkInterface extends BaseNetworkInterface {
       return printRequest(request);
     });
 
-    return fetch(this._uri, {
-      ...this._opts,
-      body: JSON.stringify(printedRequests),
-      method: 'POST',
-      ...options,
-      headers: {
-        Accept: '*/*',
-        'Content-Type': 'application/json',
-        ...options.headers as { [headerName: string]: string },
-      },
-    });
+    return this._api.query(printedRequests, options);
   }
 }
 
 export interface BatchingNetworkInterfaceOptions {
-  uri: string;
+  api: string | Api;
   batchInterval?: number;
   batchMax?: number;
   opts?: RequestInit;
@@ -266,7 +256,7 @@ export function createBatchingNetworkInterface(
     );
   }
   return new HTTPBatchedNetworkInterface({
-    uri: options.uri,
+    api: options.api,
     batchInterval: options.batchInterval,
     batchMax: options.batchMax,
     fetchOpts: options.opts || {},
